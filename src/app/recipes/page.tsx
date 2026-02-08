@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccentHeading } from "@/components/common/accent-heading";
 import { RecipeGrid } from "@/components/recipes/recipe-grid";
@@ -14,6 +14,7 @@ interface RecipeListPageProps {
     category?: string;
     sort?: string;
     page?: string;
+    q?: string;
   }>;
 }
 
@@ -22,9 +23,10 @@ export default async function RecipeListPage({ searchParams }: RecipeListPagePro
   const category = params.category;
   const sort = (params.sort as SortOption) || "date";
   const page = Number(params.page) || 1;
+  const q = params.q;
 
   const [{ recipes, total }, categories] = await Promise.all([
-    getRecipes({ category, sort, page, pageSize: 12 }),
+    getRecipes({ search: q, category, sort, page, pageSize: 12 }),
     getCategories(),
   ]);
 
@@ -45,6 +47,30 @@ export default async function RecipeListPage({ searchParams }: RecipeListPagePro
         </p>
       </section>
 
+      {/* Active Search Indicator */}
+      {q && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-app-border bg-surface px-4 py-2 text-sm">
+          <span className="text-text-secondary">
+            Showing results for{" "}
+            <strong className="text-text-primary">&ldquo;{q}&rdquo;</strong>
+          </span>
+          <Button variant="ghost" size="sm" className="ml-auto h-7 px-2" asChild>
+            <Link
+              href={{
+                pathname: "/recipes",
+                query: {
+                  ...(category && { category }),
+                  ...(sort !== "date" && { sort }),
+                },
+              }}
+            >
+              <X className="mr-1 h-3 w-3" />
+              Clear search
+            </Link>
+          </Button>
+        </div>
+      )}
+
       {/* Controls Row */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <CategoryFilter categories={categories} activeCategory={category} />
@@ -59,7 +85,11 @@ export default async function RecipeListPage({ searchParams }: RecipeListPagePro
       </div>
 
       {/* Recipe Grid */}
-      <RecipeGrid recipes={recipes} />
+      <RecipeGrid
+        recipes={recipes}
+        searchQuery={q}
+        activeCategory={category}
+      />
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -70,6 +100,7 @@ export default async function RecipeListPage({ searchParams }: RecipeListPagePro
                 href={{
                   pathname: "/recipes",
                   query: {
+                    ...(q && { q }),
                     ...(category && { category }),
                     ...(sort !== "date" && { sort }),
                     page: page - 1,
@@ -89,6 +120,7 @@ export default async function RecipeListPage({ searchParams }: RecipeListPagePro
                 href={{
                   pathname: "/recipes",
                   query: {
+                    ...(q && { q }),
                     ...(category && { category }),
                     ...(sort !== "date" && { sort }),
                     page: page + 1,

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
-import type { SortOption } from '@/types'
+import type { SortOption, RecipeWithRelations } from '@/types'
 
 export interface GetRecipesParams {
   search?: string
@@ -109,7 +109,7 @@ export async function getRecipes(params: GetRecipesParams = {}) {
       orderBy,
       skip,
       take: pageSize,
-    }),
+    }) as Promise<RecipeWithRelations[]>,
     prisma.recipe.count({ where }),
   ])
 
@@ -120,7 +120,7 @@ export async function getRecipeBySlug(slug: string) {
   return prisma.recipe.findUnique({
     where: { slug },
     include: recipeIncludes,
-  })
+  }) as Promise<RecipeWithRelations | null>
 }
 
 export async function getCategories() {
