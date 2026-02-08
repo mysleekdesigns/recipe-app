@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?
+  prepTime    Int?
+  cookTime    Int?
+  totalTime   Int?
+  servings    Int?
+  difficulty  String?
+  cuisine     String?
+  sourceUrl   String?
+  imageUrl    String?
+  imagePath   String?
+  rating      Int?
+  isFavorite  Boolean  @default(false)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ingredients  RecipeIngredient[]
+  instructions Instruction[]
+  categories   CategoriesOnRecipes[]
+  tags         TagsOnRecipes[]
+  nutrition    Nutrition?
+  mealPlanEntries MealPlanEntry[]
+}
+
+model Ingredient {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  recipes RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id           String  @id @default(cuid())
+  quantity     Float?
+  unit         String?
+  notes        String?
+  order        Int
+
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId     String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  ingredientId String
+
+  @@unique([recipeId, order])
+}
+
+model Instruction {
+  id       String @id @default(cuid())
+  step     Int
+  text     String
+
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String
+
+  @@unique([recipeId, step])
+}
+
+model Category {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  slug    String   @unique
+  recipes CategoriesOnRecipes[]
+}
+
+model Tag {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  slug    String   @unique
+  recipes TagsOnRecipes[]
+}
+
+model CategoriesOnRecipes {
+  recipe     Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId   String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+
+  @@id([recipeId, categoryId])
+}
+
+model TagsOnRecipes {
+  recipe  Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId   String
+
+  @@id([recipeId, tagId])
+}
+
+model Nutrition {
+  id       String @id @default(cuid())
+  calories Float?
+  protein  Float?
+  carbs    Float?
+  fat      Float?
+  fiber    Float?
+  sugar    Float?
+  sodium   Float?
+
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String @unique
+}
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  weekStart DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  entries   MealPlanEntry[]
+}
+
+model MealPlanEntry {
+  id         String   @id @default(cuid())
+  date       DateTime
+  mealType   String
+
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  mealPlanId String
+  recipe     Recipe   @relation(fields: [recipeId], references: [id])
+  recipeId   String
+
+  @@unique([mealPlanId, date, mealType])
+}
+
+model ShoppingList {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items     ShoppingItem[]
+}
+
+model ShoppingItem {
+  id             String  @id @default(cuid())
+  name           String
+  quantity       Float?
+  unit           String?
+  checked        Boolean @default(false)
+  isManual       Boolean @default(false)
+
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  shoppingListId String
+}
